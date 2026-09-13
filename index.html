@@ -233,6 +233,9 @@ let OPPORTUNITIES = [];
 let LOADED = false;
 let LOAD_ERROR = null;
 
+const SUBMIT_TECH_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeUHZpfIjwiWqAHNaLqWXmBKoYLE1d6npNHBtQmUvh7XEVjBg/viewform";
+const EXPRESS_INTEREST_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScBCZIWZwELUDTkk3LWaeJElXawOd8yIPR0eFYFkNVxq5isJQ/viewform";
+
 const CATEGORY_COLORS = {
   "Medical Devices": "var(--slate)",
   "Agriculture / Food Technology": "var(--olive)",
@@ -396,7 +399,7 @@ function renderHome(app){
   };
   document.getElementById('submit-tech-link').onclick = (e) => {
     e.preventDefault();
-    showToast('Technology submission form is being connected next — check back soon.');
+    window.open(SUBMIT_TECH_FORM_URL, '_blank', 'noopener');
   };
 }
 
@@ -584,8 +587,12 @@ function renderDetail(app, id){
     </div>
   `;
 
-  document.getElementById('express-interest-btn').onclick = () => showToast('Interest form is being connected next — check back soon.');
-  document.getElementById('submit-related-btn').onclick = () => showToast('Submission form is being connected next — check back soon.');
+  document.getElementById('express-interest-btn').onclick = () => {
+    window.open(EXPRESS_INTEREST_FORM_URL, '_blank', 'noopener');
+  };
+  document.getElementById('submit-related-btn').onclick = () => {
+    window.open(SUBMIT_TECH_FORM_URL, '_blank', 'noopener');
+  };
 }
 
 /* ---------------- ABOUT ---------------- */
