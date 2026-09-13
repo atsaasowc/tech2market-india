@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech2Market India — Commercialization Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --ink:#16213E;
+    --ink-soft:#3A4664;
+    --paper:#EDEBE3;
+    --paper-raised:#F7F6F1;
+    --line:#D8D4C6;
+    --brass:#A9782C;
+    --brass-dark:#8A6222;
+    --slate:#3E6169;
+    --olive:#6B7A3A;
+    --indigo:#3B4C77;
+    --forest:#3F6B4F;
+    --rust:#A64B2A;
+    --text:#20242F;
+    --text-muted:#5B5F6B;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'IBM Plex Sans', sans-serif;
+    background:var(--paper);
+    color:var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  h1,h2,h3,h4{
+    font-family:'Source Serif 4', serif;
+    color:var(--ink);
+    margin:0 0 0.4em 0;
+    line-height:1.15;
+  }
+  a{color:var(--slate); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  button{font-family:inherit;}
+
+  /* ---------- Header ---------- */
+  header{
+    background:var(--ink);
+    color:#EDEBE3;
+    border-bottom:3px solid var(--brass);
+  }
+  .header-inner{
+    max-width:1180px; margin:0 auto; padding:18px 24px;
+    display:flex; align-items:center; justify-content:space-between; gap:24px;
+  }
+  .wordmark{
+    font-family:'Source Serif 4', serif;
+    font-size:1.35rem; font-weight:700; color:#fff; letter-spacing:0.2px;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .wordmark small{
+    font-family:'IBM Plex Sans',sans-serif; font-weight:500; font-size:0.62rem;
+    color:var(--brass); letter-spacing:1.5px; text-transform:uppercase;
+  }
+  nav{display:flex; gap:22px; flex-wrap:wrap;}
+  nav a{color:#D9DAE6; font-size:0.92rem; font-weight:500;}
+  nav a:hover{color:#fff; text-decoration:none; border-bottom:2px solid var(--brass);}
+  nav a.active{color:#fff; border-bottom:2px solid var(--brass);}
+
+  main{max-width:1180px; margin:0 auto; padding:0 24px 80px;}
+
+  /* ---------- Home ---------- */
+  .hero{
+    padding:56px 0 36px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:36px;
+  }
+  .hero h1{font-size:2.5rem; max-width:720px; font-weight:600;}
+  .hero p.lede{
+    font-size:1.08rem; color:var(--text-muted); max-width:620px; margin:14px 0 28px;
+  }
+  .hero-ctas{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:34px;}
+  .btn{
+    display:inline-block; padding:11px 20px; font-weight:600; font-size:0.94rem;
+    border:1.5px solid var(--ink); background:var(--ink); color:#fff; cursor:pointer;
+    border-radius:2px;
+  }
+  .btn:hover{background:var(--ink-soft); text-decoration:none;}
+  .btn-outline{background:transparent; color:var(--ink); border:1.5px solid var(--ink);}
+  .btn-outline:hover{background:var(--ink); color:#fff;}
+  .btn-brass{background:var(--brass); border-color:var(--brass); color:#fff;}
+  .btn-brass:hover{background:var(--brass-dark); border-color:var(--brass-dark);}
+
+  .search-row{
+    display:flex; gap:10px; max-width:640px; margin-bottom:8px;
+  }
+  .search-row input{
+    flex:1; padding:12px 14px; font-size:0.98rem; border:1.5px solid var(--ink);
+    background:var(--paper-raised); font-family:inherit; border-radius:2px;
+  }
+
+  .stat-strip{
+    display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line); margin-top:14px;
+  }
+  .stat{
+    padding:16px 28px 0 0; margin-right:28px; border-right:1px solid var(--line);
+  }
+  .stat:last-child{border-right:none;}
+  .stat .num{font-family:'Source Serif 4',serif; font-size:1.9rem; color:var(--ink); font-weight:600;}
+  .stat .label{font-size:0.8rem; color:var(--text-muted); margin-top:2px;}
+
+  .section-title{
+    font-size:1.35rem; margin-bottom:4px; margin-top:48px;
+  }
+  .section-sub{color:var(--text-muted); font-size:0.92rem; margin-bottom:20px;}
+
+  .cat-grid{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px;}
+  .cat-chip{
+    padding:8px 14px; border:1px solid var(--line); background:var(--paper-raised);
+    font-size:0.85rem; font-weight:600; cursor:pointer; border-radius:2px;
+  }
+  .cat-chip:hover{border-color:var(--ink);}
+
+  /* ---------- Opportunity rows (dossier style) ---------- */
+  .opp-row{
+    display:grid; grid-template-columns: 1fr auto; gap:18px;
+    padding:20px 0; border-bottom:1px solid var(--line); cursor:pointer;
+  }
+  .opp-row:hover .opp-title{text-decoration:underline;}
+  .opp-title{font-family:'Source Serif 4',serif; font-size:1.15rem; color:var(--ink); font-weight:600; margin-bottom:4px;}
+  .opp-meta{font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;}
+  .opp-desc{font-size:0.92rem; color:var(--text); max-width:640px;}
+  .tag-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .tag{
+    font-size:0.72rem; font-weight:600; padding:3px 9px; border-radius:2px;
+    text-transform:uppercase; letter-spacing:0.4px;
+  }
+  .tag-cat{background:transparent; border:1px solid currentColor;}
+  .tag-status-verified{background:var(--forest); color:#fff;}
+  .tag-status-needs{background:var(--rust); color:#fff;}
+  .tag-status-default{background:var(--ink-soft); color:#fff;}
+
+  .score-box{
+    display:grid; grid-template-columns:repeat(3,64px); gap:8px; text-align:center;
+    align-content:start;
+  }
+  .score-cell .v{font-family:'Source Serif 4',serif; font-size:1.3rem; color:var(--ink); font-weight:600;}
+  .score-cell .l{font-size:0.62rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px; margin-top:2px;}
+  .score-cell .v.na{color:#B7B3A4;}
+
+  /* ---------- Discover filters ---------- */
+  .discover-layout{display:grid; grid-template-columns:220px 1fr; gap:36px; margin-top:24px;}
+  .filters{border-right:1px solid var(--line); padding-right:24px;}
+  .filter-group{margin-bottom:26px;}
+  .filter-group h4{font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); font-family:'IBM Plex Sans',sans-serif; margin-bottom:10px;}
+  .filter-group label{display:block; font-size:0.88rem; margin-bottom:8px; cursor:pointer;}
+  .filter-group select{width:100%; padding:8px; border:1px solid var(--line); background:var(--paper-raised); font-family:inherit;}
+  .result-count{font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;}
+
+  /* ---------- Detail page ---------- */
+  .detail-layout{display:grid; grid-template-columns:1fr 300px; gap:44px; margin-top:28px;}
+  .detail-header{border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:24px;}
+  .detail-header h1{font-size:1.9rem;}
+  .dblock{margin-bottom:30px;}
+  .dblock h3{font-size:1.05rem; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:12px;}
+  .dblock p{line-height:1.6; font-size:0.96rem; color:var(--text);}
+  .evidence-note{
+    font-size:0.82rem; color:var(--text-muted); background:var(--paper-raised);
+    border-left:3px solid var(--brass); padding:10px 14px; margin-top:10px;
+  }
+  .sidebar-card{
+    background:var(--paper-raised); border:1px solid var(--line); padding:20px; margin-bottom:20px;
+  }
+  .sidebar-card h4{font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); font-family:'IBM Plex Sans',sans-serif; margin-bottom:14px;}
+  .score-line{display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px dotted var(--line); font-size:0.88rem;}
+  .score-line:last-child{border-bottom:none;}
+  .score-line .val{font-weight:700; color:var(--ink); font-family:'Source Serif 4',serif;}
+  .score-line .val.na{color:#B7B3A4; font-family:inherit; font-weight:500;}
+  .back-link{display:inline-block; margin-bottom:18px; font-size:0.9rem;}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:12px 20px; border-radius:3px;
+    font-size:0.88rem; box-shadow:0 4px 14px rgba(0,0,0,0.25); z-index:99;
+    opacity:0; pointer-events:none; transition:opacity 0.25s ease;
+  }
+  .toast.show{opacity:1;}
+
+  .empty-state{padding:60px 0; text-align:center; color:var(--text-muted);}
+
+  footer{
+    border-top:1px solid var(--line); margin-top:60px; padding:30px 24px;
+    text-align:center; color:var(--text-muted); font-size:0.82rem;
+  }
+
+  @media (max-width: 800px){
+    .discover-layout, .detail-layout{grid-template-columns:1fr;}
+    .filters{border-right:none; border-bottom:1px solid var(--line); padding-right:0; padding-bottom:20px;}
+    .opp-row{grid-template-columns:1fr;}
+    .score-box{grid-template-columns:repeat(3,1fr); margin-top:12px;}
+    .hero h1{font-size:1.9rem;}
+    nav{gap:14px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="wordmark">Tech2Market <small>India</small></div>
+    <nav id="nav">
+      <a href="#/" data-route="/">Home</a>
+      <a href="#/discover" data-route="/discover">Discover</a>
+      <a href="#/about" data-route="/about">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  Tech2Market India — commercialization intelligence for Indian research and IP.
+  Scores are platform assessments based on available evidence, not guarantees of commercial success. Verify all IP, regulatory and licensing claims independently.
+</footer>
+
+<script>
+const SHEET_ID = "1HJn4UjGTF1ScFff_ucyUZj0O4vLcwNjERrHmJsQ_S1Q";
+const DATA_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv&sheet=Opportunities";
+
+let OPPORTUNITIES = [];
+let LOADED = false;
+let LOAD_ERROR = null;
+
+const CATEGORY_COLORS = {
+  "Medical Devices": "var(--slate)",
+  "Agriculture / Food Technology": "var(--olive)",
+  "Manufacturing Technology": "var(--brass-dark)",
+  "Electronics / AI / IoT": "var(--indigo)",
+  "Clean Energy / Environmental Technology": "var(--forest)"
+};
+
+function catColor(cat){ return CATEGORY_COLORS[cat] || "var(--ink-soft)"; }
+
+function parseScoreCell(raw){
+  if(!raw) return {num:null, display:"—"};
+  const s = String(raw).trim();
+  const m = s.match(/^-?\d+(\.\d+)?/);
+  if(!m) return {num:null, display:"—"};
+  return {num: parseFloat(m[0]), display: m[0]};
+}
+
+function statusTagClass(status){
+  if(!status) return "tag-status-default";
+  const s = status.toLowerCase();
+  if(s.startsWith("verified")) return "tag-status-verified";
+  if(s.includes("needs verification") || s.startsWith("candidate")) return "tag-status-needs";
+  return "tag-status-default";
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+function loadData(cb){
+  if(LOADED){ cb(); return; }
+  Papa.parse(DATA_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results){
+      OPPORTUNITIES = results.data.filter(r => r.Opportunity_ID && r.Opportunity_ID.trim() !== "");
+      LOADED = true;
+      cb();
+    },
+    error: function(err){
+      LOAD_ERROR = err;
+      LOADED = true;
+      cb();
+    }
+  });
+}
+
+function fmtOverall(raw){
+  if(!raw) return {num:null, note:""};
+  const s = String(raw).trim();
+  const m = s.match(/^(\d+(\.\d+)?)/);
+  if(m){
+    const rest = s.slice(m[0].length).trim();
+    return {num: parseFloat(m[0]), note: rest};
+  }
+  return {num:null, note:s};
+}
+
+/* ---------------- ROUTER ---------------- */
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', render);
+
+function currentRoute(){
+  let h = location.hash.replace(/^#/, '');
+  if(h === '') h = '/';
+  return h;
+}
+
+function setActiveNav(route){
+  document.querySelectorAll('#nav a').forEach(a=>{
+    a.classList.toggle('active', a.getAttribute('data-route') === (route.startsWith('/discover') ? '/discover' : route));
+  });
+}
+
+function render(){
+  const app = document.getElementById('app');
+  const route = currentRoute();
+  setActiveNav(route);
+  app.innerHTML = '<div class="empty-state">Loading opportunities…</div>';
+
+  loadData(function(){
+    if(LOAD_ERROR || OPPORTUNITIES.length === 0){
+      app.innerHTML = '<div class="empty-state"><h3>Could not load the database</h3>' +
+        '<p>The live data feed did not respond or returned no rows.</p>' +
+        '<p style="font-size:0.85rem; color:var(--text-muted);">Try opening this link directly in a new tab to check it still works: <a href="' + DATA_URL + '" target="_blank" rel="noopener">' + DATA_URL + '</a></p>' +
+        (LOAD_ERROR ? '<p style="font-size:0.8rem; color:var(--rust);">Error detail: ' + (LOAD_ERROR.message || LOAD_ERROR) + '</p>' : '') +
+        '</div>';
+      return;
+    }
+    if(route === '/') renderHome(app);
+    else if(route === '/discover') renderDiscover(app);
+    else if(route.startsWith('/opportunity/')) renderDetail(app, decodeURIComponent(route.split('/opportunity/')[1]));
+    else if(route === '/about') renderAbout(app);
+    else renderHome(app);
+  });
+}
+
+/* ---------------- HOME ---------------- */
+function renderHome(app){
+  const total = OPPORTUNITIES.length;
+  const cats = [...new Set(OPPORTUNITIES.map(o=>o.Category).filter(Boolean))];
+  const verifiedCount = OPPORTUNITIES.filter(o => (o.Status||'').toLowerCase().startsWith('verified')).length;
+
+  const featured = [...OPPORTUNITIES]
+    .map(o => ({...o, _overall: fmtOverall(o.Overall_Score).num}))
+    .filter(o => o._overall !== null)
+    .sort((a,b)=> b._overall - a._overall)
+    .slice(0,5);
+
+  app.innerHTML = `
+    <div class="hero">
+      <h1>Turn research and IP into commercial opportunities in India</h1>
+      <p class="lede">Discover patents, research, theses and technologies — then understand their market, manufacturing and commercialization potential in India.</p>
+      <div class="search-row">
+        <input id="home-search" type="text" placeholder="e.g. low-cost water purification for rural markets">
+        <button class="btn btn-brass" id="home-search-btn">Search</button>
+      </div>
+      <div class="hero-ctas" style="margin-top:20px;">
+        <a class="btn" href="#/discover">Explore Opportunities</a>
+        <a class="btn btn-outline" href="#" id="submit-tech-link">Submit Your Technology</a>
+      </div>
+      <div class="stat-strip">
+        <div class="stat"><div class="num">${total}</div><div class="label">Opportunities catalogued</div></div>
+        <div class="stat"><div class="num">${cats.length}</div><div class="label">Technology sectors</div></div>
+        <div class="stat"><div class="num">${verifiedCount}</div><div class="label">Verified / reference-quality</div></div>
+        <div class="stat"><div class="num">India</div><div class="label">First market focus</div></div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Browse by sector</h2>
+    <p class="section-sub">Start with the technology category most relevant to you.</p>
+    <div class="cat-grid" id="cat-grid"></div>
+
+    <h2 class="section-title">Highest-scoring opportunities</h2>
+    <p class="section-sub">Ranked by overall commercialization score where evidence is sufficient to compute one.</p>
+    <div id="featured-list"></div>
+  `;
+
+  const catGrid = document.getElementById('cat-grid');
+  cats.forEach(c=>{
+    const chip = document.createElement('div');
+    chip.className = 'cat-chip';
+    chip.style.color = catColor(c);
+    chip.textContent = c;
+    chip.onclick = () => { location.hash = '#/discover'; setTimeout(()=>{ const sel=document.getElementById('filter-category'); if(sel){ sel.value=c; sel.dispatchEvent(new Event('change')); } }, 60); };
+    catGrid.appendChild(chip);
+  });
+
+  const list = document.getElementById('featured-list');
+  featured.forEach(o => list.appendChild(oppRowEl(o)));
+
+  document.getElementById('home-search-btn').onclick = () => {
+    const q = document.getElementById('home-search').value;
+    location.hash = '#/discover';
+    setTimeout(()=>{ const inp = document.getElementById('search-input'); if(inp){ inp.value = q; inp.dispatchEvent(new Event('input')); } }, 60);
+  };
+  document.getElementById('submit-tech-link').onclick = (e) => {
+    e.preventDefault();
+    showToast('Technology submission form is being connected next — check back soon.');
+  };
+}
+
+/* ---------------- SHARED: opportunity row ---------------- */
+function oppRowEl(o){
+  const row = document.createElement('div');
+  row.className = 'opp-row';
+  row.onclick = () => { location.hash = '#/opportunity/' + encodeURIComponent(o.Opportunity_ID); };
+
+  const marketFit = parseScoreCell(o.India_Market_Fit_Score);
+  const manuf = parseScoreCell(o.Manufacturability_Score);
+  const overall = fmtOverall(o.Overall_Score);
+
+  row.innerHTML = `
+    <div>
+      <div class="opp-title">${o.Title || 'Untitled opportunity'}</div>
+      <div class="opp-meta">${o.Category || ''} · ${o.Institution || 'Institution unknown'} · ${o.Country || ''}</div>
+      <div class="opp-desc">${o.Short_Description || ''}</div>
+      <div class="tag-row">
+        <span class="tag tag-cat" style="color:${catColor(o.Category)}">${o.Category || 'Uncategorized'}</span>
+        <span class="tag ${statusTagClass(o.Status)}">${(o.Status || 'Unclassified').replace('Candidate — ','')}</span>
+      </div>
+    </div>
+    <div class="score-box">
+      <div class="score-cell"><div class="v ${marketFit.num===null?'na':''}">${marketFit.display}</div><div class="l">India Fit</div></div>
+      <div class="score-cell"><div class="v ${manuf.num===null?'na':''}">${manuf.display}</div><div class="l">Manufact.</div></div>
+      <div class="score-cell"><div class="v ${overall.num===null?'na':''}">${overall.num===null?'—':overall.num}</div><div class="l">Overall</div></div>
+    </div>
+  `;
+  return row;
+}
+
+/* ---------------- DISCOVER ---------------- */
+function renderDiscover(app){
+  const cats = [...new Set(OPPORTUNITIES.map(o=>o.Category).filter(Boolean))];
+
+  app.innerHTML = `
+    <h1 style="margin-top:36px;">Discover opportunities</h1>
+    <p class="section-sub">${OPPORTUNITIES.length} commercialization opportunities in the database.</p>
+    <div class="discover-layout">
+      <div class="filters">
+        <div class="filter-group">
+          <h4>Search</h4>
+          <input id="search-input" type="text" placeholder="Search title or keyword" style="width:100%; padding:9px; border:1px solid var(--line); font-family:inherit;">
+        </div>
+        <div class="filter-group">
+          <h4>Category</h4>
+          <select id="filter-category">
+            <option value="">All categories</option>
+            ${cats.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="filter-group">
+          <h4>Status</h4>
+          <select id="filter-status">
+            <option value="">All statuses</option>
+            <option value="verified">Verified / reference-quality</option>
+            <option value="needs">Needs verification</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <h4>Sort by</h4>
+          <select id="sort-by">
+            <option value="overall">Overall score (high to low)</option>
+            <option value="marketfit">India Market Fit (high to low)</option>
+            <option value="title">Title (A–Z)</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="result-count" id="result-count"></div>
+        <div id="results-list"></div>
+      </div>
+    </div>
+  `;
+
+  function applyFilters(){
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const cat = document.getElementById('filter-category').value;
+    const status = document.getElementById('filter-status').value;
+    const sortBy = document.getElementById('sort-by').value;
+
+    let filtered = OPPORTUNITIES.filter(o=>{
+      const text = (o.Title + ' ' + o.Short_Description + ' ' + (o.Keywords||'')).toLowerCase();
+      if(q && !text.includes(q)) return false;
+      if(cat && o.Category !== cat) return false;
+      if(status === 'verified' && !(o.Status||'').toLowerCase().startsWith('verified')) return false;
+      if(status === 'needs' && !(o.Status||'').toLowerCase().includes('needs verification')) return false;
+      return true;
+    });
+
+    filtered = filtered.map(o => ({...o, _overall: fmtOverall(o.Overall_Score).num, _marketfit: parseScoreCell(o.India_Market_Fit_Score).num}));
+
+    if(sortBy === 'overall') filtered.sort((a,b)=> (b._overall ?? -1) - (a._overall ?? -1));
+    else if(sortBy === 'marketfit') filtered.sort((a,b)=> (b._marketfit ?? -1) - (a._marketfit ?? -1));
+    else if(sortBy === 'title') filtered.sort((a,b)=> (a.Title||'').localeCompare(b.Title||''));
+
+    document.getElementById('result-count').textContent = filtered.length + ' result' + (filtered.length===1?'':'s');
+    const list = document.getElementById('results-list');
+    list.innerHTML = '';
+    if(filtered.length === 0){
+      list.innerHTML = '<div class="empty-state">No opportunities match these filters. Try widening your search.</div>';
+      return;
+    }
+    filtered.forEach(o => list.appendChild(oppRowEl(o)));
+  }
+
+  ['search-input'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
+  ['filter-category','filter-status','sort-by'].forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
+
+  applyFilters();
+}
+
+/* ---------------- DETAIL ---------------- */
+function renderDetail(app, id){
+  const o = OPPORTUNITIES.find(x => x.Opportunity_ID === id);
+  if(!o){
+    app.innerHTML = '<div class="empty-state"><h3>Opportunity not found</h3><a href="#/discover">Back to Discover</a></div>';
+    return;
+  }
+
+  const scores = [
+    ['India Market Fit', o.India_Market_Fit_Score],
+    ['Manufacturability', o.Manufacturability_Score],
+    ['Commercialization Readiness', o.Commercialization_Readiness_Score],
+    ['Market Opportunity', o.Market_Opportunity_Score],
+    ['IP / Defensibility', o.IP_Defensibility_Score],
+    ['Regulatory Ease', o.Regulatory_Complexity_Score],
+  ];
+  const overall = fmtOverall(o.Overall_Score);
+
+  app.innerHTML = `
+    <a class="back-link" href="#/discover">&larr; Back to Discover</a>
+    <div class="detail-header">
+      <span class="tag tag-cat" style="color:${catColor(o.Category)}">${o.Category||''}</span>
+      <h1>${o.Title||''}</h1>
+      <div class="opp-meta">${o.Institution||'Institution unknown'} · ${o.Country||''} · Source: ${o.Source_Type||'Unknown'}</div>
+      <div class="tag-row">
+        <span class="tag ${statusTagClass(o.Status)}">${o.Status||'Unclassified'}</span>
+      </div>
+    </div>
+
+    <div class="detail-layout">
+      <div>
+        <div class="dblock">
+          <h3>Overview</h3>
+          <p>${o.Short_Description||'No description available.'}</p>
+        </div>
+        <div class="dblock">
+          <h3>Problem</h3>
+          <p>${o.Problem_Solved||'Not stated.'}</p>
+        </div>
+        <div class="dblock">
+          <h3>Technology Readiness</h3>
+          <p><strong>${o.TRL||'Unknown'}</strong> — ${o.TRL_Reason||'No readiness evidence stated.'}</p>
+          <p>Prototype available: ${o.Prototype_Available||'Unknown'}</p>
+        </div>
+        <div class="dblock">
+          <h3>Opportunity Score</h3>
+          <p>${o.Score_Explanation||''}</p>
+          ${overall.num===null?'':`<p style="margin-top:8px;"><strong>Overall (tentative): ${overall.num}/100</strong></p>`}
+        </div>
+        <div class="dblock">
+          <h3>Commercialization Path</h3>
+          <p>${o.Commercialization_Path||'Not yet assessed.'}</p>
+        </div>
+        <div class="dblock">
+          <h3>Sources & Evidence</h3>
+          <p>${o.Source_URL ? `<a href="${o.Source_URL}" target="_blank" rel="noopener">${o.Source_URL}</a>` : 'No source link on file.'}</p>
+          <div class="evidence-note">Evidence status and scores on this page are platform assessments based on available public evidence, not verified fact. Patent status, licensing availability, and manufacturing partner willingness should be independently confirmed before acting on this opportunity.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="sidebar-card">
+          <h4>Score Breakdown</h4>
+          ${scores.map(([label,val])=>{
+            const s = parseScoreCell(val);
+            return `<div class="score-line"><span>${label}</span><span class="val ${s.num===null?'na':''}">${s.display}</span></div>`;
+          }).join('')}
+        </div>
+        <button class="btn btn-brass" style="width:100%; margin-bottom:12px;" id="express-interest-btn">Express Interest</button>
+        <button class="btn btn-outline" style="width:100%;" id="submit-related-btn">Submit a Related Technology</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('express-interest-btn').onclick = () => showToast('Interest form is being connected next — check back soon.');
+  document.getElementById('submit-related-btn').onclick = () => showToast('Submission form is being connected next — check back soon.');
+}
+
+/* ---------------- ABOUT ---------------- */
+function renderAbout(app){
+  app.innerHTML = `
+    <div style="max-width:680px; margin-top:40px;">
+      <h1>About Tech2Market India</h1>
+      <p style="line-height:1.7; margin-top:16px;">Tech2Market India discovers patents, research projects, theses and prototypes from India and around the world, and evaluates which ones may be commercially useful in India — covering market fit, manufacturability, regulatory considerations and likely commercialization routes.</p>
+      <p style="line-height:1.7;">Every score on this platform is a transparent, explainable assessment based on publicly available evidence — never a black-box AI judgment, and never a substitute for independent legal, regulatory or technical verification.</p>
+      <p style="line-height:1.7;">This is an early-stage, evolving database. If you notice an error or have a technology to suggest, use the Submit Technology option from any opportunity page.</p>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
