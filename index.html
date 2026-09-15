@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MGZ6F3WGC4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  // send_page_view disabled here — this is a single-page app, so we send page_view
+  // events manually on each route change instead (see router code below)
+  gtag('config', 'G-MGZ6F3WGC4', { send_page_view: false });
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tech2Market India — Commercialization Intelligence</title>
@@ -344,6 +354,14 @@ function setActiveNav(route){
   });
 }
 
+function trackEvent(name, params){
+  if(typeof gtag === 'function'){ gtag('event', name, params || {}); }
+}
+
+function trackPageView(route, title){
+  trackEvent('page_view', { page_path: '/#' + route, page_title: title, page_location: location.href });
+}
+
 function render(){
   const app = document.getElementById('app');
   const route = currentRoute();
@@ -359,10 +377,18 @@ function render(){
         '</div>';
       return;
     }
-    if(route === '/') renderHome(app);
-    else if(route === '/discover') renderDiscover(app);
-    else if(route.startsWith('/opportunity/')) loadCompanies(() => renderDetail(app, decodeURIComponent(route.split('/opportunity/')[1])));
-    else if(route === '/about') renderAbout(app);
+    if(route === '/'){ trackPageView(route, 'Home'); renderHome(app); }
+    else if(route === '/discover'){ trackPageView(route, 'Discover'); renderDiscover(app); }
+    else if(route.startsWith('/opportunity/')){
+      const oid = decodeURIComponent(route.split('/opportunity/')[1]);
+      loadCompanies(() => {
+        const opp = OPPORTUNITIES.find(x => x.Opportunity_ID === oid);
+        trackEvent('view_opportunity', { opportunity_id: oid, opportunity_title: opp ? opp.Title : '', opportunity_category: opp ? opp.Category : '' });
+        trackPageView(route, opp ? opp.Title : oid);
+        renderDetail(app, oid);
+      });
+    }
+    else if(route === '/about'){ trackPageView(route, 'About'); renderAbout(app); }
     else renderHome(app);
   });
 }
@@ -423,11 +449,13 @@ function renderHome(app){
 
   document.getElementById('home-search-btn').onclick = () => {
     const q = document.getElementById('home-search').value;
+    trackEvent('search', { search_term: q });
     location.hash = '#/discover';
     setTimeout(()=>{ const inp = document.getElementById('search-input'); if(inp){ inp.value = q; inp.dispatchEvent(new Event('input')); } }, 60);
   };
   document.getElementById('submit-tech-link').onclick = (e) => {
     e.preventDefault();
+    trackEvent('submit_technology_click', { source_page: 'home' });
     window.open(SUBMIT_TECH_FORM_URL, '_blank', 'noopener');
   };
 }
@@ -539,6 +567,22 @@ function renderDiscover(app){
   ['search-input'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
   ['filter-category','filter-status','sort-by'].forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
 
+  // Debounced search tracking — fires once ~700ms after the user stops typing, not per keystroke
+  let searchDebounce;
+  document.getElementById('search-input').addEventListener('input', (e)=>{
+    clearTimeout(searchDebounce);
+    const val = e.target.value;
+    searchDebounce = setTimeout(()=>{
+      if(val.trim() !== '') trackEvent('search', { search_term: val });
+    }, 700);
+  });
+  document.getElementById('filter-category').addEventListener('change', (e)=>{
+    if(e.target.value) trackEvent('filter_category', { category: e.target.value });
+  });
+  document.getElementById('filter-status').addEventListener('change', (e)=>{
+    if(e.target.value) trackEvent('filter_status', { status_filter: e.target.value });
+  });
+
   applyFilters();
 }
 
@@ -641,9 +685,11 @@ function renderDetail(app, id){
   `;
 
   document.getElementById('express-interest-btn').onclick = () => {
+    trackEvent('express_interest_click', { opportunity_id: o.Opportunity_ID, opportunity_title: o.Title, opportunity_category: o.Category });
     window.open(EXPRESS_INTEREST_FORM_URL, '_blank', 'noopener');
   };
   document.getElementById('submit-related-btn').onclick = () => {
+    trackEvent('submit_technology_click', { source_page: 'opportunity_detail', opportunity_id: o.Opportunity_ID });
     window.open(SUBMIT_TECH_FORM_URL, '_blank', 'noopener');
   };
 }
