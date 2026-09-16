@@ -273,6 +273,28 @@ function parseScoreCell(raw){
   return {num: parseFloat(m[0]), display: m[0]};
 }
 
+// Parses a TRL text field like "TRL 7-8 (Source Reported)" or "TRL 9 (Verified)" or "Unknown"
+// into a numeric value (using the first/lowest number in a range) and a readiness band for filtering.
+function parseTRL(raw){
+  if(!raw) return {num: null, band: 'unknown'};
+  const s = String(raw).trim();
+  const m = s.match(/TRL\s*(\d+)/i);
+  if(!m) return {num: null, band: 'unknown'};
+  const num = parseInt(m[1], 10);
+  let band = 'unknown';
+  if(num >= 1 && num <= 3) band = 'early';
+  else if(num >= 4 && num <= 6) band = 'development';
+  else if(num >= 7 && num <= 9) band = 'deployment';
+  return {num, band};
+}
+
+const TRL_BAND_LABELS = {
+  early: 'TRL 1-3 · Early Research',
+  development: 'TRL 4-6 · Development',
+  deployment: 'TRL 7-9 · Deployment Ready',
+  unknown: 'TRL Unknown / Not Stated'
+};
+
 function statusTagClass(status){
   if(!status) return "tag-status-default";
   const s = status.toLowerCase();
@@ -469,6 +491,7 @@ function oppRowEl(o){
   const marketFit = parseScoreCell(o.India_Market_Fit_Score);
   const manuf = parseScoreCell(o.Manufacturability_Score);
   const overall = fmtOverall(o.Overall_Score);
+  const trl = parseTRL(o.TRL);
 
   row.innerHTML = `
     <div>
@@ -478,6 +501,7 @@ function oppRowEl(o){
       <div class="tag-row">
         <span class="tag tag-cat" style="color:${catColor(o.Category)}">${o.Category || 'Uncategorized'}</span>
         <span class="tag ${statusTagClass(o.Status)}">${(o.Status || 'Unclassified').replace('Candidate — ','')}</span>
+        <span class="tag" style="border:1px solid var(--line); color:var(--text-muted);">${trl.num===null ? 'TRL Unknown' : 'TRL ' + trl.num}</span>
       </div>
     </div>
     <div class="score-box">
@@ -518,6 +542,16 @@ function renderDiscover(app){
           </select>
         </div>
         <div class="filter-group">
+          <h4>Technology Readiness</h4>
+          <select id="filter-trl">
+            <option value="">All readiness levels</option>
+            <option value="deployment">TRL 7-9 · Deployment Ready</option>
+            <option value="development">TRL 4-6 · Development</option>
+            <option value="early">TRL 1-3 · Early Research</option>
+            <option value="unknown">TRL Unknown / Not Stated</option>
+          </select>
+        </div>
+        <div class="filter-group">
           <h4>Sort by</h4>
           <select id="sort-by">
             <option value="overall">Overall score (high to low)</option>
@@ -537,6 +571,7 @@ function renderDiscover(app){
     const q = document.getElementById('search-input').value.toLowerCase();
     const cat = document.getElementById('filter-category').value;
     const status = document.getElementById('filter-status').value;
+    const trlBand = document.getElementById('filter-trl').value;
     const sortBy = document.getElementById('sort-by').value;
 
     let filtered = OPPORTUNITIES.filter(o=>{
@@ -545,6 +580,7 @@ function renderDiscover(app){
       if(cat && o.Category !== cat) return false;
       if(status === 'verified' && !(o.Status||'').toLowerCase().startsWith('verified')) return false;
       if(status === 'needs' && !(o.Status||'').toLowerCase().includes('needs verification')) return false;
+      if(trlBand && parseTRL(o.TRL).band !== trlBand) return false;
       return true;
     });
 
@@ -565,7 +601,7 @@ function renderDiscover(app){
   }
 
   ['search-input'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
-  ['filter-category','filter-status','sort-by'].forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
+  ['filter-category','filter-status','filter-trl','sort-by'].forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
 
   // Debounced search tracking — fires once ~700ms after the user stops typing, not per keystroke
   let searchDebounce;
@@ -581,6 +617,9 @@ function renderDiscover(app){
   });
   document.getElementById('filter-status').addEventListener('change', (e)=>{
     if(e.target.value) trackEvent('filter_status', { status_filter: e.target.value });
+  });
+  document.getElementById('filter-trl').addEventListener('change', (e)=>{
+    if(e.target.value) trackEvent('filter_trl', { trl_band: e.target.value });
   });
 
   applyFilters();
