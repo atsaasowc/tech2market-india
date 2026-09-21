@@ -193,6 +193,44 @@
   .score-line .val.na{color:#B7B3A4; font-family:inherit; font-weight:500;}
   .back-link{display:inline-block; margin-bottom:18px; font-size:0.9rem;}
 
+  .score-bar-row{margin-bottom:12px;}
+  .score-bar-label{display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:4px;}
+  .score-bar-label span:last-child{font-weight:700; color:var(--ink); font-family:'Source Serif 4',serif;}
+  .score-bar-label .na{color:#B7B3A4; font-family:inherit; font-weight:500;}
+  .score-bar-track{height:6px; background:var(--line); border-radius:3px; overflow:hidden;}
+  .score-bar-fill{height:100%; background:var(--brass); border-radius:3px;}
+  .overall-score-box{display:flex; justify-content:space-between; align-items:baseline; padding-top:10px; margin-top:6px; border-top:1px solid var(--line); font-size:0.95rem;}
+  .overall-score-box strong{font-family:'Source Serif 4',serif; font-size:1.3rem; color:var(--ink);}
+
+  /* ---------- Modal (Pursue / Brief) ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(22,33,62,0.55); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-box{
+    background:var(--paper-raised); max-width:520px; width:100%; max-height:88vh; overflow-y:auto;
+    padding:32px 28px 24px; position:relative; border-radius:2px; box-shadow:0 10px 40px rgba(0,0,0,0.3);
+  }
+  .modal-close{
+    position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.6rem;
+    color:var(--text-muted); cursor:pointer; line-height:1;
+  }
+  .modal-progress{font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--brass); font-weight:600; margin-bottom:10px;}
+  .modal-sub{color:var(--text-muted); font-size:0.9rem; margin:4px 0 14px;}
+  .modal-body h3{font-size:1.25rem; margin-bottom:4px;}
+  .modal-actions{display:flex; justify-content:space-between; align-items:center; margin-top:22px; gap:10px;}
+  .checkbox-grid, .radio-grid{display:flex; flex-wrap:wrap; gap:8px;}
+  .check-pill{
+    display:flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid var(--line);
+    background:var(--paper); font-size:0.85rem; cursor:pointer; border-radius:2px;
+  }
+  .check-pill input{margin:0;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .form-grid label{display:flex; flex-direction:column; font-size:0.8rem; color:var(--text-muted); gap:5px;}
+  .form-grid input{padding:9px; border:1px solid var(--line); font-family:inherit; font-size:0.92rem;}
+  .brief-section{font-size:0.88rem; padding:8px 0; border-bottom:1px dotted var(--line);}
+  .brief-section:last-of-type{border-bottom:none;}
+
   .toast{
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
     background:var(--ink); color:#fff; padding:12px 20px; border-radius:3px;
@@ -216,6 +254,8 @@
     .hero h1{font-size:1.9rem;}
     nav{gap:14px;}
     .company-grid{grid-template-columns:1fr;}
+    .form-grid{grid-template-columns:1fr;}
+    .modal-box{padding:24px 18px 20px;}
   }
 </style>
 </head>
@@ -227,6 +267,7 @@
     <nav id="nav">
       <a href="#/" data-route="/">Home</a>
       <a href="#/discover" data-route="/discover">Discover</a>
+      <a href="#/find-technology" data-route="/find-technology">Find a Technology</a>
       <a href="#/about" data-route="/about">About</a>
     </nav>
   </div>
@@ -401,6 +442,7 @@ function render(){
     }
     if(route === '/'){ trackPageView(route, 'Home'); renderHome(app); }
     else if(route === '/discover'){ trackPageView(route, 'Discover'); renderDiscover(app); }
+    else if(route === '/find-technology'){ trackPageView(route, 'Find a Technology'); renderFindTechnology(app); }
     else if(route.startsWith('/opportunity/')){
       const oid = decodeURIComponent(route.split('/opportunity/')[1]);
       loadCompanies(() => {
@@ -437,6 +479,7 @@ function renderHome(app){
       </div>
       <div class="hero-ctas" style="margin-top:20px;">
         <a class="btn" href="#/discover">Explore Opportunities</a>
+        <a class="btn btn-outline" href="#/find-technology">Find a Technology</a>
         <a class="btn btn-outline" href="#" id="submit-tech-link">Submit Your Technology</a>
       </div>
       <div class="stat-strip">
@@ -445,6 +488,12 @@ function renderHome(app){
         <div class="stat"><div class="num">${verifiedCount}</div><div class="label">Verified / reference-quality</div></div>
         <div class="stat"><div class="num">India</div><div class="label">First market focus</div></div>
       </div>
+    </div>
+
+    <div class="dblock" style="border:1px solid var(--line); background:var(--paper-raised); padding:24px; margin:36px 0;">
+      <h3 style="margin-bottom:6px;">Can't find what you're looking for?</h3>
+      <p style="color:var(--text-muted); margin-bottom:14px;">Tell us what technology or capability you need — we'll search our database and follow up, even if there isn't an exact match today.</p>
+      <a class="btn btn-brass" href="#/find-technology">Post a Technology Requirement</a>
     </div>
 
     <h2 class="section-title">Browse by sector</h2>
@@ -646,6 +695,273 @@ function renderCompaniesForOpportunity(oppId){
     <div class="evidence-note" style="margin-top:12px;">Companies listed here are identified based on publicly documented capabilities that appear relevant to this technology. This does not indicate that a company has expressed interest, willingness to license, or willingness to manufacture — verify independently before outreach.</div>`;
 }
 
+// Maps free-text Commercialization_Path values into a set of standard route chips.
+// This is presentation only — it never claims a route is guaranteed, only "possible."
+function parseRoutes(pathText){
+  if(!pathText) return [];
+  const t = pathText.toLowerCase();
+  const routes = [];
+  const check = (kw, label) => { if(t.includes(kw) && !routes.includes(label)) routes.push(label); };
+  check('licens', 'Licensing');
+  check('manufactur', 'Manufacturing Partnership');
+  check('distribut', 'Distribution');
+  check('pilot', 'Pilot Deployment');
+  check('joint development', 'Joint Development');
+  check('joint venture', 'Joint Venture');
+  check('research collaboration', 'R&D Collaboration');
+  check('acquisition', 'Acquisition');
+  check('startup', 'Startup / Spinout');
+  check('investment', 'Investment');
+  return routes;
+}
+
+const PURSUE_INTEREST_OPTIONS = ['License','Manufacture','Distribute','Invest','Joint Venture','Pilot','R&D Collaboration','Acquire','Other'];
+const PURSUE_TIMELINE_OPTIONS = ['Immediate','3–6 months','6–12 months','12+ months','Exploratory'];
+
+// Maps our internal Find-a-Technology form fields to the live Google Form's entry IDs,
+// extracted from the form's own page source (FB_PUBLIC_LOAD_DATA_).
+const FIND_TECH_FORM_ID = '1FAIpQLSdPdsGB24DeqDB1dkapo4a2town4OuacX4mLeqKgVMQbDiVCA';
+const FIND_TECH_FORM_ACTION = 'https://docs.google.com/forms/d/e/' + FIND_TECH_FORM_ID + '/formResponse';
+const FIND_TECH_ENTRY_MAP = {
+  organization: 'entry.1090586187',
+  contact_name: 'entry.122553944',
+  email: 'entry.515820503',
+  phone: 'entry.529878089',
+  industry: 'entry.1690635204',
+  geography: 'entry.1850235558',
+  problem: 'entry.375081286',
+  application: 'entry.1659431780',
+  required_technology: 'entry.688113913',
+  desired_trl: 'entry.1917809244',
+  timeline: 'entry.583912878',
+  budget: 'entry.2101214039',
+  engagement: 'entry.1723087167', // checkboxes — repeated key per selected value
+  additional_info: 'entry.90086943'
+};
+// Our internal TRL filter codes don't match the Google Form's option text, so map them here.
+const FIND_TECH_TRL_LABELS = {
+  '': 'No preference',
+  deployment: 'TRL 7-9 Deployment Ready',
+  development: 'TRL 4-6 Development',
+  early: 'TRL 1-3 Early Research'
+};
+
+// Submits directly to Google's servers in the background — no popup, no redirect.
+// Uses mode:'no-cors' (the standard technique for this), so we can't read a real
+// success/failure response back; we treat the request firing as success.
+function submitFindTechToGoogleForm(data, engagementList){
+  const params = new URLSearchParams();
+  Object.keys(FIND_TECH_ENTRY_MAP).forEach(key => {
+    if(key === 'engagement') return; // handled separately below (multi-value)
+    if(key === 'desired_trl'){
+      params.append(FIND_TECH_ENTRY_MAP[key], FIND_TECH_TRL_LABELS[data[key]] || 'No preference');
+    } else {
+      params.append(FIND_TECH_ENTRY_MAP[key], data[key] || '');
+    }
+  });
+  engagementList.forEach(val => params.append(FIND_TECH_ENTRY_MAP.engagement, val));
+
+  return fetch(FIND_TECH_FORM_ACTION, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+}
+
+let PURSUE_STATE = null;
+
+function openPursueModal(o){
+  PURSUE_STATE = { opp: o, step: 1, interests: [], org: '', name: '', role: '', email: '', phone: '', industry: '', objective: '', timeline: '', budget: '' };
+  trackEvent('pursue_technology_open', { opportunity_id: o.Opportunity_ID, opportunity_title: o.Title });
+  renderModalRoot();
+  renderPursueStep();
+}
+
+function renderModalRoot(){
+  let root = document.getElementById('modal-root');
+  if(!root){
+    root = document.createElement('div');
+    root.id = 'modal-root';
+    document.body.appendChild(root);
+  }
+}
+
+function closeModal(){
+  const root = document.getElementById('modal-root');
+  if(root) root.innerHTML = '';
+  PURSUE_STATE = null;
+}
+
+function renderPursueStep(){
+  const root = document.getElementById('modal-root');
+  const s = PURSUE_STATE;
+  const totalSteps = 5;
+
+  let body = '';
+  if(s.step === 1){
+    body = `
+      <h3>What are you interested in?</h3>
+      <p class="modal-sub">Select all that apply.</p>
+      <div class="checkbox-grid">
+        ${PURSUE_INTEREST_OPTIONS.map(opt => `
+          <label class="check-pill">
+            <input type="checkbox" value="${opt}" ${s.interests.includes(opt)?'checked':''}> ${opt}
+          </label>
+        `).join('')}
+      </div>
+    `;
+  } else if(s.step === 2){
+    body = `
+      <h3>About your organization</h3>
+      <div class="form-grid">
+        <label>Organization<input type="text" id="f-org" value="${s.org}"></label>
+        <label>Your Name<input type="text" id="f-name" value="${s.name}"></label>
+        <label>Role<input type="text" id="f-role" value="${s.role}"></label>
+        <label>Email<input type="email" id="f-email" value="${s.email}"></label>
+        <label>Phone<input type="text" id="f-phone" value="${s.phone}"></label>
+        <label>Industry<input type="text" id="f-industry" value="${s.industry}"></label>
+      </div>
+    `;
+  } else if(s.step === 3){
+    body = `
+      <h3>What are you trying to achieve?</h3>
+      <p class="modal-sub">A few sentences is enough — what problem or goal brings you to this technology?</p>
+      <textarea id="f-objective" rows="5" style="width:100%; padding:10px; border:1px solid var(--line); font-family:inherit;">${s.objective}</textarea>
+    `;
+  } else if(s.step === 4){
+    body = `
+      <h3>Timeline</h3>
+      <div class="radio-grid">
+        ${PURSUE_TIMELINE_OPTIONS.map(opt => `
+          <label class="check-pill">
+            <input type="radio" name="timeline" value="${opt}" ${s.timeline===opt?'checked':''}> ${opt}
+          </label>
+        `).join('')}
+      </div>
+    `;
+  } else if(s.step === 5){
+    body = `
+      <h3>Almost done</h3>
+      <p class="modal-sub">Optional — approximate investment or project budget range. Skip if you'd rather not say.</p>
+      <input type="text" id="f-budget" placeholder="e.g. Under ₹10L, ₹10L–1Cr, ₹1Cr+, Not sure yet" value="${s.budget}" style="width:100%; padding:10px; border:1px solid var(--line); font-family:inherit;">
+      <div class="evidence-note" style="margin-top:16px;">Right now this sends your details to our team via a short follow-up form (opens in a new tab) so nothing is lost — we're actively building a way to capture this directly. Your responses in this flow are already recorded so we can see what people are asking for.</div>
+    `;
+  }
+
+  root.innerHTML = `
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal-box">
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+        <div class="modal-progress">Step ${s.step} of ${totalSteps}</div>
+        <div class="modal-body">${body}</div>
+        <div class="modal-actions">
+          ${s.step > 1 ? '<button class="btn btn-outline" id="modal-back-btn">Back</button>' : '<span></span>'}
+          <button class="btn btn-brass" id="modal-next-btn">${s.step === totalSteps ? 'Submit & Continue' : 'Next'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modal-close-btn').onclick = closeModal;
+  document.getElementById('modal-overlay').onclick = (e) => { if(e.target.id === 'modal-overlay') closeModal(); };
+  if(document.getElementById('modal-back-btn')){
+    document.getElementById('modal-back-btn').onclick = () => { captureStepInputs(); s.step--; trackEvent('pursue_technology_step', {step: s.step, opportunity_id: s.opp.Opportunity_ID}); renderPursueStep(); };
+  }
+  document.getElementById('modal-next-btn').onclick = () => {
+    captureStepInputs();
+    if(s.step < totalSteps){
+      s.step++;
+      trackEvent('pursue_technology_step', {step: s.step, opportunity_id: s.opp.Opportunity_ID});
+      renderPursueStep();
+    } else {
+      submitPursueFlow();
+    }
+  };
+}
+
+function captureStepInputs(){
+  const s = PURSUE_STATE;
+  if(s.step === 1){
+    s.interests = Array.from(document.querySelectorAll('.checkbox-grid input:checked')).map(el => el.value);
+  } else if(s.step === 2){
+    s.org = document.getElementById('f-org').value;
+    s.name = document.getElementById('f-name').value;
+    s.role = document.getElementById('f-role').value;
+    s.email = document.getElementById('f-email').value;
+    s.phone = document.getElementById('f-phone').value;
+    s.industry = document.getElementById('f-industry').value;
+  } else if(s.step === 3){
+    s.objective = document.getElementById('f-objective').value;
+  } else if(s.step === 4){
+    const checked = document.querySelector('input[name="timeline"]:checked');
+    s.timeline = checked ? checked.value : '';
+  } else if(s.step === 5){
+    s.budget = document.getElementById('f-budget').value;
+  }
+}
+
+function submitPursueFlow(){
+  const s = PURSUE_STATE;
+  trackEvent('pursue_technology_submit', {
+    opportunity_id: s.opp.Opportunity_ID,
+    opportunity_title: s.opp.Title,
+    interests: s.interests.join(', '),
+    industry: s.industry,
+    timeline: s.timeline,
+    budget: s.budget
+  });
+  closeModal();
+  window.open(EXPRESS_INTEREST_FORM_URL, '_blank', 'noopener');
+  showToast('Thanks — opening the follow-up form to reach our team.');
+}
+
+function openBriefModal(o){
+  trackEvent('request_brief_click', { opportunity_id: o.Opportunity_ID, opportunity_title: o.Title, action: 'view_brief_info' });
+  renderModalRoot();
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal-box">
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+        <h3>Commercialization Intelligence Brief</h3>
+        <p class="modal-sub">A deeper assessment of "${o.Title}" beyond what's public on this page.</p>
+        <div class="brief-section"><strong>Technology</strong> — technical characteristics, TRL evidence, prototype evidence</div>
+        <div class="brief-section"><strong>Market</strong> — target market, applications, Indian market context, customer segments</div>
+        <div class="brief-section"><strong>Commercialization</strong> — potential routes, manufacturing considerations, adoption barriers</div>
+        <div class="brief-section"><strong>Companies</strong> — potential manufacturers, customers, distribution and strategic partners</div>
+        <div class="brief-section"><strong>IP</strong> — patent/source information, defensibility considerations</div>
+        <div class="brief-section"><strong>Regulatory</strong> — relevant considerations, certification requirements, key risks</div>
+        <div class="brief-section"><strong>Competitive landscape & recommended next actions</strong></div>
+        <div class="evidence-note" style="margin-top:14px;">This is a preview of a future paid product — not yet available for purchase. Expressing interest helps us prioritize building it.</div>
+        <div class="modal-actions" style="margin-top:16px;">
+          <span></span>
+          <button class="btn btn-brass" id="brief-request-btn">Request This Brief</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-close-btn').onclick = closeModal;
+  document.getElementById('modal-overlay').onclick = (e) => { if(e.target.id === 'modal-overlay') closeModal(); };
+  document.getElementById('brief-request-btn').onclick = () => {
+    trackEvent('request_brief_click', { opportunity_id: o.Opportunity_ID, opportunity_title: o.Title, action: 'submit_request' });
+    closeModal();
+    window.open(EXPRESS_INTEREST_FORM_URL, '_blank', 'noopener');
+  };
+}
+
+function isSaved(oppId){
+  try { return JSON.parse(localStorage.getItem('t2m_saved')||'[]').includes(oppId); } catch(e){ return false; }
+}
+function toggleSaved(oppId){
+  try {
+    let saved = JSON.parse(localStorage.getItem('t2m_saved')||'[]');
+    if(saved.includes(oppId)){ saved = saved.filter(x=>x!==oppId); trackEvent('save_technology', {opportunity_id: oppId, action:'unsave'}); }
+    else { saved.push(oppId); trackEvent('save_technology', {opportunity_id: oppId, action:'save'}); }
+    localStorage.setItem('t2m_saved', JSON.stringify(saved));
+  } catch(e){ /* localStorage unavailable — fail silently, this is a prototype feature */ }
+}
+
 function renderDetail(app, id){
   const o = OPPORTUNITIES.find(x => x.Opportunity_ID === id);
   if(!o){
@@ -699,6 +1015,17 @@ function renderDetail(app, id){
           ${renderCompaniesForOpportunity(o.Opportunity_ID)}
         </div>
         <div class="dblock">
+          <h3>What Can I Do With This Technology?</h3>
+          <p class="modal-sub" style="margin-bottom:10px;">Possible commercialization routes based on available information — not guaranteed opportunities.</p>
+          <div class="tag-row">
+            ${(() => {
+              const routes = parseRoutes(o.Commercialization_Path);
+              if(routes.length === 0) return '<span style="color:var(--text-muted); font-size:0.9rem;">Not yet assessed.</span>';
+              return routes.map(r => `<span class="tag" style="background:var(--paper-raised); border:1px solid var(--indigo); color:var(--indigo);">${r}</span>`).join('');
+            })()}
+          </div>
+        </div>
+        <div class="dblock">
           <h3>Commercialization Path</h3>
           <p>${o.Commercialization_Path||'Not yet assessed.'}</p>
         </div>
@@ -711,21 +1038,32 @@ function renderDetail(app, id){
 
       <div>
         <div class="sidebar-card">
-          <h4>Score Breakdown</h4>
+          <h4>Commercialization Snapshot</h4>
           ${scores.map(([label,val])=>{
             const s = parseScoreCell(val);
-            return `<div class="score-line"><span>${label}</span><span class="val ${s.num===null?'na':''}">${s.display}</span></div>`;
+            const pct = s.num===null ? 0 : Math.max(0, Math.min(100, s.num));
+            return `
+              <div class="score-bar-row">
+                <div class="score-bar-label"><span>${label}</span><span class="${s.num===null?'na':''}">${s.display}</span></div>
+                <div class="score-bar-track"><div class="score-bar-fill" style="width:${pct}%;"></div></div>
+              </div>`;
           }).join('')}
+          ${overall.num!==null ? `<div class="overall-score-box"><span>Overall</span><strong>${overall.num}/100</strong></div>` : ''}
+          <div class="evidence-note" style="margin-top:10px;">These are platform assessments, not independently verified facts.</div>
         </div>
-        <button class="btn btn-brass" style="width:100%; margin-bottom:12px;" id="express-interest-btn">Express Interest</button>
+        <button class="btn btn-brass" style="width:100%; margin-bottom:10px;" id="pursue-btn">Pursue This Technology</button>
+        <button class="btn btn-outline" style="width:100%; margin-bottom:10px;" id="brief-btn">Get the Commercialization Brief</button>
+        <button class="btn btn-outline" style="width:100%; margin-bottom:10px;" id="save-btn">${isSaved(o.Opportunity_ID) ? '★ Saved' : '☆ Save Technology'}</button>
         <button class="btn btn-outline" style="width:100%;" id="submit-related-btn">Submit a Related Technology</button>
       </div>
     </div>
   `;
 
-  document.getElementById('express-interest-btn').onclick = () => {
-    trackEvent('express_interest_click', { opportunity_id: o.Opportunity_ID, opportunity_title: o.Title, opportunity_category: o.Category });
-    window.open(EXPRESS_INTEREST_FORM_URL, '_blank', 'noopener');
+  document.getElementById('pursue-btn').onclick = () => openPursueModal(o);
+  document.getElementById('brief-btn').onclick = () => openBriefModal(o);
+  document.getElementById('save-btn').onclick = (e) => {
+    toggleSaved(o.Opportunity_ID);
+    e.target.textContent = isSaved(o.Opportunity_ID) ? '★ Saved' : '☆ Save Technology';
   };
   document.getElementById('submit-related-btn').onclick = () => {
     trackEvent('submit_technology_click', { source_page: 'opportunity_detail', opportunity_id: o.Opportunity_ID });
@@ -734,6 +1072,109 @@ function renderDetail(app, id){
 }
 
 /* ---------------- ABOUT ---------------- */
+function renderFindTechnology(app){
+  app.innerHTML = `
+    <div style="max-width:720px; margin-top:36px;">
+      <h1>Tell us what problem you need to solve.</h1>
+      <p class="section-sub" style="margin-bottom:28px;">We search across our technology intelligence database for relevant research, patents, prototypes and technologies — and flag it for follow-up even where we don't yet have a match.</p>
+
+      <div id="find-tech-form">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <label>Company / Organization<input type="text" id="ft-org"></label>
+          <label>Contact Name<input type="text" id="ft-name"></label>
+          <label>Email<input type="email" id="ft-email"></label>
+          <label>Phone<input type="text" id="ft-phone"></label>
+          <label>Industry<input type="text" id="ft-industry"></label>
+          <label>Geography<input type="text" id="ft-geography" placeholder="e.g. Pan-India, North India, Maharashtra"></label>
+        </div>
+
+        <div class="filter-group" style="margin-bottom:16px;">
+          <h4>Problem / Requirement</h4>
+          <textarea id="ft-problem" rows="4" style="width:100%; padding:10px; border:1px solid var(--line); font-family:inherit;" placeholder="Describe the problem you're trying to solve or the capability you need"></textarea>
+        </div>
+
+        <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <label>Application<input type="text" id="ft-application" placeholder="e.g. water purification for rural areas"></label>
+          <label>Required Technology (if known)<input type="text" id="ft-required-tech"></label>
+        </div>
+
+        <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <label>Desired Technology Readiness
+            <select id="ft-trl">
+              <option value="">No preference</option>
+              <option value="deployment">TRL 7-9 · Deployment Ready</option>
+              <option value="development">TRL 4-6 · Development</option>
+              <option value="early">TRL 1-3 · Early Research</option>
+            </select>
+          </label>
+          <label>Timeline
+            <select id="ft-timeline">
+              <option value="">Select one</option>
+              ${PURSUE_TIMELINE_OPTIONS.map(t=>`<option value="${t}">${t}</option>`).join('')}
+            </select>
+          </label>
+        </div>
+
+        <label style="display:block; margin-bottom:16px;">Approximate Budget Range<input type="text" id="ft-budget" style="width:100%; padding:9px; border:1px solid var(--line); font-family:inherit;" placeholder="e.g. Under ₹10L, ₹10L–1Cr, ₹1Cr+, Not sure yet"></label>
+
+        <div class="filter-group" style="margin-bottom:16px;">
+          <h4>Preferred Engagement</h4>
+          <div class="checkbox-grid" id="ft-engagement-grid">
+            ${PURSUE_INTEREST_OPTIONS.filter(o=>o!=='Other').concat(['Distribution','Other']).map(opt => `
+              <label class="check-pill"><input type="checkbox" value="${opt}"> ${opt}</label>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="filter-group" style="margin-bottom:20px;">
+          <h4>Additional Information</h4>
+          <textarea id="ft-additional" rows="3" style="width:100%; padding:10px; border:1px solid var(--line); font-family:inherit;"></textarea>
+        </div>
+
+        <button class="btn btn-brass" id="ft-submit-btn">Find Matching Technologies</button>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">This is an early-stage matching workflow — a person on our team reviews every submission rather than an automated engine, for now.</p>
+      </div>
+
+      <div id="find-tech-confirmation" style="display:none;">
+        <div class="evidence-note" style="font-size:0.95rem; padding:20px;">
+          <strong>Thanks — we've recorded your requirement.</strong><br><br>
+          We don't yet have a fully automated matching engine, so a member of our team will review this and follow up if we find (or can find) something relevant. In the meantime, you're welcome to browse the database yourself.
+        </div>
+        <a class="btn" href="#/discover" style="margin-top:16px; display:inline-block;">Explore Technologies</a>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('ft-submit-btn').onclick = () => {
+    const engagement = Array.from(document.querySelectorAll('#ft-engagement-grid input:checked')).map(el=>el.value);
+    const data = {
+      organization: document.getElementById('ft-org').value,
+      contact_name: document.getElementById('ft-name').value,
+      email: document.getElementById('ft-email').value,
+      phone: document.getElementById('ft-phone').value,
+      industry: document.getElementById('ft-industry').value,
+      geography: document.getElementById('ft-geography').value,
+      problem: document.getElementById('ft-problem').value,
+      application: document.getElementById('ft-application').value,
+      required_technology: document.getElementById('ft-required-tech').value,
+      desired_trl: document.getElementById('ft-trl').value,
+      timeline: document.getElementById('ft-timeline').value,
+      budget: document.getElementById('ft-budget').value,
+      engagement: engagement.join(', '),
+      additional_info: document.getElementById('ft-additional').value
+    };
+    if(!data.problem.trim() || !data.email.trim()){
+      showToast('Please fill in at least the problem description and your email.');
+      return;
+    }
+    trackEvent('find_technology_submit', data);
+    submitFindTechToGoogleForm(data, engagement).catch(()=>{ /* no-cors: errors are rare and unreadable here, fail silently */ });
+    document.getElementById('find-tech-form').style.display = 'none';
+    document.getElementById('find-tech-confirmation').style.display = 'block';
+  };
+}
+
+
 function renderAbout(app){
   app.innerHTML = `
     <div style="max-width:680px; margin-top:40px;">
