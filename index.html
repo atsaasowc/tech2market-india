@@ -390,6 +390,21 @@ function loadCompanies(cb){
   });
 }
 
+// ---------- Data access layer ----------
+// UI code should read through these functions, not the OPPORTUNITIES/COMPANIES
+// arrays directly. That keeps the data source (currently Google Sheets via CSV)
+// swappable for a real backend/API later without touching every renderer.
+function getOpportunities(){
+  return OPPORTUNITIES;
+}
+function getOpportunity(id){
+  return OPPORTUNITIES.find(x => x.Opportunity_ID === id);
+}
+function getCompanies(opportunityId){
+  const target = (opportunityId || '').trim();
+  return COMPANIES.filter(c => (c.Opportunity_ID || '').trim() === target);
+}
+
 function fmtOverall(raw){
   if(!raw) return {num:null, note:""};
   const s = String(raw).trim();
@@ -432,7 +447,7 @@ function render(){
   app.innerHTML = '<div class="empty-state">Loading opportunities…</div>';
 
   loadData(function(){
-    if(LOAD_ERROR || OPPORTUNITIES.length === 0){
+    if(LOAD_ERROR || getOpportunities().length === 0){
       app.innerHTML = '<div class="empty-state"><h3>Could not load the database</h3>' +
         '<p>The live data feed did not respond or returned no rows.</p>' +
         '<p style="font-size:0.85rem; color:var(--text-muted);">Try opening this link directly in a new tab to check it still works: <a href="' + DATA_URL + '" target="_blank" rel="noopener">' + DATA_URL + '</a></p>' +
@@ -446,7 +461,7 @@ function render(){
     else if(route.startsWith('/opportunity/')){
       const oid = decodeURIComponent(route.split('/opportunity/')[1]);
       loadCompanies(() => {
-        const opp = OPPORTUNITIES.find(x => x.Opportunity_ID === oid);
+        const opp = getOpportunity(oid);
         trackEvent('view_opportunity', { opportunity_id: oid, opportunity_title: opp ? opp.Title : '', opportunity_category: opp ? opp.Category : '' });
         trackPageView(route, opp ? opp.Title : oid);
         renderDetail(app, oid);
@@ -459,11 +474,11 @@ function render(){
 
 /* ---------------- HOME ---------------- */
 function renderHome(app){
-  const total = OPPORTUNITIES.length;
-  const cats = [...new Set(OPPORTUNITIES.map(o=>o.Category).filter(Boolean))];
-  const verifiedCount = OPPORTUNITIES.filter(o => (o.Status||'').toLowerCase().startsWith('verified')).length;
+  const total = getOpportunities().length;
+  const cats = [...new Set(getOpportunities().map(o=>o.Category).filter(Boolean))];
+  const verifiedCount = getOpportunities().filter(o => (o.Status||'').toLowerCase().startsWith('verified')).length;
 
-  const featured = [...OPPORTUNITIES]
+  const featured = [...getOpportunities()]
     .map(o => ({...o, _overall: fmtOverall(o.Overall_Score).num}))
     .filter(o => o._overall !== null)
     .sort((a,b)=> b._overall - a._overall)
@@ -564,11 +579,11 @@ function oppRowEl(o){
 
 /* ---------------- DISCOVER ---------------- */
 function renderDiscover(app){
-  const cats = [...new Set(OPPORTUNITIES.map(o=>o.Category).filter(Boolean))];
+  const cats = [...new Set(getOpportunities().map(o=>o.Category).filter(Boolean))];
 
   app.innerHTML = `
     <h1 style="margin-top:36px;">Discover opportunities</h1>
-    <p class="section-sub">${OPPORTUNITIES.length} commercialization opportunities in the database.</p>
+    <p class="section-sub">${getOpportunities().length} commercialization opportunities in the database.</p>
     <div class="discover-layout">
       <div class="filters">
         <div class="filter-group">
@@ -623,7 +638,7 @@ function renderDiscover(app){
     const trlBand = document.getElementById('filter-trl').value;
     const sortBy = document.getElementById('sort-by').value;
 
-    let filtered = OPPORTUNITIES.filter(o=>{
+    let filtered = getOpportunities().filter(o=>{
       const text = (o.Title + ' ' + o.Short_Description + ' ' + (o.Keywords||'')).toLowerCase();
       if(q && !text.includes(q)) return false;
       if(cat && o.Category !== cat) return false;
@@ -676,7 +691,7 @@ function renderDiscover(app){
 
 /* ---------------- DETAIL ---------------- */
 function renderCompaniesForOpportunity(oppId){
-  const matches = COMPANIES.filter(c => (c.Opportunity_ID||'').trim() === oppId);
+  const matches = getCompanies(oppId);
   if(matches.length === 0){
     return `<p style="color:var(--text-muted); font-size:0.92rem;">No commercialization partners identified yet for this opportunity.</p>`;
   }
@@ -920,19 +935,50 @@ function openBriefModal(o){
   trackEvent('request_brief_click', { opportunity_id: o.Opportunity_ID, opportunity_title: o.Title, action: 'view_brief_info' });
   renderModalRoot();
   const root = document.getElementById('modal-root');
+  const companies = getCompanies(o.Opportunity_ID);
+  const trl = parseTRL(o.TRL);
+  const routes = parseRoutes(o.Commercialization_Path);
+
   root.innerHTML = `
     <div class="modal-overlay" id="modal-overlay">
-      <div class="modal-box">
+      <div class="modal-box" style="max-width:600px;">
         <button class="modal-close" id="modal-close-btn">&times;</button>
         <h3>Commercialization Intelligence Brief</h3>
-        <p class="modal-sub">A deeper assessment of "${o.Title}" beyond what's public on this page.</p>
-        <div class="brief-section"><strong>Technology</strong> — technical characteristics, TRL evidence, prototype evidence</div>
-        <div class="brief-section"><strong>Market</strong> — target market, applications, Indian market context, customer segments</div>
-        <div class="brief-section"><strong>Commercialization</strong> — potential routes, manufacturing considerations, adoption barriers</div>
-        <div class="brief-section"><strong>Companies</strong> — potential manufacturers, customers, distribution and strategic partners</div>
-        <div class="brief-section"><strong>IP</strong> — patent/source information, defensibility considerations</div>
-        <div class="brief-section"><strong>Regulatory</strong> — relevant considerations, certification requirements, key risks</div>
-        <div class="brief-section"><strong>Competitive landscape & recommended next actions</strong></div>
+        <p class="modal-sub">"${o.Title}" — what we already know publicly, and what the deeper paid brief would add.</p>
+
+        <div class="brief-section">
+          <strong>Technology</strong><br>
+          <span style="color:var(--text-muted);">Public:</span> ${o.TRL || 'TRL not stated'}${o.TRL_Reason ? ' — ' + o.TRL_Reason : ''}<br>
+          <span style="color:var(--text-muted);">Brief adds:</span> full technical characteristics, prototype evidence review, independent readiness verification
+        </div>
+        <div class="brief-section">
+          <strong>Market</strong><br>
+          <span style="color:var(--text-muted);">Public:</span> India Market Fit score ${parseScoreCell(o.India_Market_Fit_Score).display}/100, Category: ${o.Category || 'Unclassified'}<br>
+          <span style="color:var(--text-muted);">Brief adds:</span> target customer segments, sizing, competitive applications
+        </div>
+        <div class="brief-section">
+          <strong>Commercialization</strong><br>
+          <span style="color:var(--text-muted);">Public:</span> ${routes.length ? routes.join(', ') : 'Not yet assessed'} · Manufacturability ${parseScoreCell(o.Manufacturability_Score).display}/100<br>
+          <span style="color:var(--text-muted);">Brief adds:</span> manufacturing considerations, adoption barriers, deployment requirements
+        </div>
+        <div class="brief-section">
+          <strong>Companies</strong><br>
+          <span style="color:var(--text-muted);">Public:</span> ${companies.length ? companies.length + ' potential partner(s) identified' : 'None identified yet'}<br>
+          <span style="color:var(--text-muted);">Brief adds:</span> full manufacturer/customer/distributor shortlist with outreach-ready profiles
+        </div>
+        <div class="brief-section">
+          <strong>IP</strong><br>
+          <span style="color:var(--text-muted);">Public:</span> ${o.Source_URL ? 'Source on file' : 'No source on file'} · IP Defensibility score ${parseScoreCell(o.IP_Defensibility_Score).display}/100<br>
+          <span style="color:var(--text-muted);">Brief adds:</span> patent status verification, defensibility analysis
+        </div>
+        <div class="brief-section">
+          <strong>Regulatory</strong><br>
+          <span style="color:var(--text-muted);">Public:</span> Regulatory Complexity score ${parseScoreCell(o.Regulatory_Complexity_Score).display}/100<br>
+          <span style="color:var(--text-muted);">Brief adds:</span> specific certification requirements, key regulatory risks
+        </div>
+        <div class="brief-section">
+          <strong>Competitive landscape & recommended next actions</strong> — only in the paid brief
+        </div>
         <div class="evidence-note" style="margin-top:14px;">This is a preview of a future paid product — not yet available for purchase. Expressing interest helps us prioritize building it.</div>
         <div class="modal-actions" style="margin-top:16px;">
           <span></span>
@@ -963,7 +1009,7 @@ function toggleSaved(oppId){
 }
 
 function renderDetail(app, id){
-  const o = OPPORTUNITIES.find(x => x.Opportunity_ID === id);
+  const o = getOpportunity(id);
   if(!o){
     app.innerHTML = '<div class="empty-state"><h3>Opportunity not found</h3><a href="#/discover">Back to Discover</a></div>';
     return;
