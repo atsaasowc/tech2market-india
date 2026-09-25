@@ -1,1 +1,44 @@
+name: Build SEO Pages
+
+on:
+  schedule:
+    # Runs nightly at 02:00 UTC — regenerates static pages from the latest
+    # Google Sheets data so search engines always see current content.
+    - cron: '0 2 * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build_seo_pages.py'
+      - '.github/workflows/build-seo-pages.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate SEO pages
+        run: python scripts/build_seo_pages.py
+
+      - name: Commit and push if anything changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add technology sector sitemap.xml robots.txt
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-update SEO pages [skip ci]"
+            git push
+          fi
 
